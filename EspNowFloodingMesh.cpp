@@ -736,11 +736,11 @@ void msg_recv_cb(const uint8_t* data, int len, const uint8_t* mac_addr)
           Serial.print("Last sync time:"); Serial.println(last_time_sync);
           Serial.print("Sync time in message:"); Serial.println(m.encrypted.header.time);
 #endif
-          Serial.print("Last sync time: ");
-          Serial.println((long)last_time_sync);
+          // Serial.print("Last sync time: ");
+          // Serial.println((long)last_time_sync);
 
-          Serial.print("Incoming sync time: ");
-          Serial.println((long)m.encrypted.header.time);
+          // Serial.print("Incoming sync time: ");
+          // Serial.println((long)m.encrypted.header.time);
           if (last_time_sync < m.encrypted.header.time || ALLOW_TIME_ERROR_IN_SYNC_MESSAGE || syncRecoveryRequested) {
             ok = true;
             last_time_sync = m.encrypted.header.time;
