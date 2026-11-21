@@ -10,7 +10,7 @@
 #endif
 #include <Arduino.h>
 
-const char *ssid = "MESH_NETWORK";
+const char* ssid = "MESH_NETWORK";
 char wifi_password[20];
 
 #define BEACON_SSID_OFFSET 38
@@ -21,19 +21,19 @@ char wifi_password[20];
 #define DATA_START_OFFSET 24
 
 uint8_t raw_HEADER[] = {
-    //MAC HEADER
-    0x40, 0x0C,                         // 0-1: Frame Control  //Version 0 && Data Frame && MESH
-    0x00, 0x00,                         // 2-3: Duration
-    0xaa, 0xbb, 0xcc, 0xee, 0xff, 0x11, // 4-9: Destination address (broadcast)
-    0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06, // 10-15: Source address
-    0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06, // 16-21: BSSID
-    0x00, 0x00                          // 22-23: Sequence / fragment number
+  //MAC HEADER
+  0x40, 0x0C,                         // 0-1: Frame Control  //Version 0 && Data Frame && MESH
+  0x00, 0x00,                         // 2-3: Duration
+  0xaa, 0xbb, 0xcc, 0xee, 0xff, 0x11, // 4-9: Destination address (broadcast)
+  0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06, // 10-15: Source address
+  0xba, 0xde, 0xaf, 0xfe, 0x00, 0x06, // 16-21: BSSID
+  0x00, 0x00                          // 22-23: Sequence / fragment number
 };
 short sequence = 0;
-void (*wifi_802_receive_callback)(const uint8_t *, int, uint8_t) = NULL;
+void (*wifi_802_receive_callback)(const uint8_t*, int, uint8_t) = NULL;
 
 #ifdef ESP32
-void receive_raw_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
+void receive_raw_cb(void* recv_buf, wifi_promiscuous_pkt_type_t type)
 {
   /*
   20:35:41.710 ->            BF 20 24 80 00 00 00 00 A1 00 01 B6 AC 32 16 00 __$__________2__
@@ -46,13 +46,13 @@ void receive_raw_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
   20:35:41.743 ->                    Length: 100
 
   */
-  wifi_promiscuous_pkt_t *sniffer = (wifi_promiscuous_pkt_t *)recv_buf;
+  wifi_promiscuous_pkt_t* sniffer = (wifi_promiscuous_pkt_t*)recv_buf;
   if (sniffer->payload[0] != 0x40)
     return;
   if (memcmp(sniffer->payload + BSSID_OFFSET, raw_HEADER + BSSID_OFFSET, 6) != 0)
     return;
 
-  unsigned char *d = sniffer->payload + DATA_START_OFFSET;
+  unsigned char* d = sniffer->payload + DATA_START_OFFSET;
   short length = ((unsigned short)d[0]) << 8 | d[1];
 
   wifi_802_receive_callback(d + 2, length, sniffer->rx_ctrl.rssi);
@@ -60,7 +60,7 @@ void receive_raw_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
   return;
 }
 #else
-void receive_raw_cb(unsigned char *frm, short unsigned int len)
+void receive_raw_cb(unsigned char* frm, short unsigned int len)
 {
   /*
     16:34:05.795 ->            C3 10 26 50 00 00 00 00 00 00 01 00 [40 0C 00 00 __&P________@___
@@ -79,7 +79,7 @@ void receive_raw_cb(unsigned char *frm, short unsigned int len)
     return;
   if (memcmp(frm + BSSID_OFFSET + 12, raw_HEADER + BSSID_OFFSET, 6) != 0)
     return;
-  unsigned char *d = frm + 12 + DATA_START_OFFSET;
+  unsigned char* d = frm + 12 + DATA_START_OFFSET;
 
   short length = ((unsigned short)d[0]) << 8 | d[1];
 
@@ -112,12 +112,12 @@ void wifi_802_11_begin(char bsId[], int channel)
 #endif
 }
 
-void wifi_802_receive_cb(void (*cb)(const uint8_t *, int, uint8_t))
+void wifi_802_receive_cb(void (*cb)(const uint8_t*, int, uint8_t))
 {
   wifi_802_receive_callback = cb;
 }
 
-void wifi_802_11_send(const uint8_t *d, uint16_t len)
+void wifi_802_11_send(const uint8_t* d, uint16_t len)
 {
   uint8_t buf[500];
   for (int i = 0; i < 5; i++)
@@ -127,13 +127,13 @@ void wifi_802_11_send(const uint8_t *d, uint16_t len)
 
     memcpy(buf, raw_HEADER, sizeof(raw_HEADER));
     memcpy(buf + sizeof(raw_HEADER) + 2, d, len);
-    memcpy(buf + SEQNUM_OFFSET, (char *)&sequence, 2);
+    memcpy(buf + SEQNUM_OFFSET, (char*)&sequence, 2);
 
     buf[sizeof(raw_HEADER)] = (len >> 8) & 0xff;
     buf[sizeof(raw_HEADER) + 1] = len & 0xff;
 
 #ifdef ESP32
-    esp_wifi_80211_tx(ESP_IF_WIFI_STA, buf, sizeof(raw_HEADER) + len + 2, true);
+    esp_wifi_80211_tx(WIFI_IF_STA, buf, sizeof(raw_HEADER) + len + 2, true);
 #else
     wifi_send_pkt_freedom(buf, sizeof(raw_HEADER) + len + 2, true);
 #endif
