@@ -3,34 +3,52 @@
 
 #define ESP_NOW_CHANNEL 1
 #define ESP_NOW_BSID 1
-//AES 128bit
-unsigned char secredKey[] = { 0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF };
 
+// AES 128bit
+unsigned char secredKey[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
+
+// Broadcast message
+void broadcastMsg(String message) {
+  espNowFloodingMesh_send(
+    (uint8_t*)message.c_str(),
+    message.length() + 1
+  );
+}
+
+// Direct reply
+void sendReply(String message, uint32_t replyPrt) {
+  espNowFloodingMesh_sendReply(
+    (uint8_t*)message.c_str(),
+    message.length() + 1,
+    0,
+    replyPrt
+  );
+}
+
+// Receive message
 void espNowFloodingMeshRecv(const uint8_t* data, int len, uint32_t replyPrt) {
   if (len > 0) {
     Serial.println((const char*)data);
   }
 }
 
-void sendMsg(String message) {
-  espNowFloodingMesh_send((uint8_t*)message.c_str(), message.length() + 1);
-}
-
 void setup() {
   Serial.begin(115200);
-  //Set device in AP mode to begin with
+
   espNowFloodingMesh_RecvCB(espNowFloodingMeshRecv);
   espNowFloodingMesh_secredkey(secredKey);
   espNowFloodingMesh_begin(ESP_NOW_CHANNEL, ESP_NOW_BSID);
-  espNowFloodingMesh_setToMasterRole(true, 3); //Set ttl to 3.
+  espNowFloodingMesh_setToMasterRole(true, 3);
 }
 
 void loop() {
   static unsigned long m = millis();
+
   if (m + 5000 < millis()) {
-    sendMsg("MASTER HELLO MESSAGE");
+    broadcastMsg("MASTER HELLO MESSAGE");
     m = millis();
   }
+
   espNowFloodingMesh_loop();
   delay(10);
 }
